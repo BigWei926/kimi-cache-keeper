@@ -58,6 +58,11 @@ kimi-cache-keeper/
 └── README.md  # 本文件
 ```
 
+## 示例
+保活机制启动后，过了很久，我让kimi把对话总结为md文档，可以看到额度消耗依旧是0.01%，而不是缓存过期后的0.1%~0.15%
+<img width="759" height="574" alt="image" src="https://github.com/user-attachments/assets/b58f25d0-55bd-4c0a-93d9-8207fa8680f4" />
+
+
 ## 免责声明
 
 本项目是社区工具,与 Moonshot AI 官方无关。缓存机制、窗口时长、计费口径以官方说明和实际账单为准。使用前请自行评估,作者不对额度消耗差异负责。
