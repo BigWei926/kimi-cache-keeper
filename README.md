@@ -85,6 +85,27 @@ Kimi Code 的服务端对输入做前缀缓存:两次请求的前缀一致且间
 
 该设计思想移植自社区 fork([bearchild233](https://github.com/bearchild233) 的 opencode 插件版)中"不为冷会话付费重启"的策略,感谢原作者。retire 仅支持定点循环模式(链式任务的信封不含累计计数)。
 
+## v2:cache-keeper2(活动锚定 smart)
+
+v1 的两种模式有一个共同盲点:触发时机锚定的是**墙钟或上一次保活触发**,而不是你的对话——聊天聊到一半它照样按自己的节奏触发(coalesced 到回合空隙补投),那次请求就是纯浪费。
+
+`cache-keeper2/SKILL.md` 是 v2 版本,定点循环模式与 v1 完全一致,**smart 模式升级为"重置链式"**:
+
+1. **对话重置**:开启后,模型在每一轮回复结束前静默执行 `date + CronDelete + CronCreate`,把下一次触发重置为"当前时间 + N 分钟"
+2. **触发续链**:与 v1 smart 相同——连续 N 分钟无对话才触发,触发后自建下一跳
+
+效果:保活只在**连续 N 分钟无对话活动**后触发,对话期间完全不会插入保活。
+
+```
+/cache-keeper2 smart         # 重置链式,15 分钟(也可 /cache-keeper2 on 15 smart)
+/cache-keeper2 on            # 定点循环,与 v1 相同(默认 4 小时自动退休)
+/cache-keeper2 status / off  # 查看 / 关闭
+```
+
+**代价与适用场景**:每轮对话多约 3 次工具调用。低频对话、长任务多的场景净收益为正(省掉的是每次整段上下文的保活请求);高频碎碎念对话时可能得不偿失,建议切回定点循环。上下文压缩后若模型遗忘重置义务,会优雅退化为 v1 smart 的纯链式行为,不会静默断链。
+
+retire 仅支持定点循环模式;smart 模式不支持(retire 依赖循环任务信封里的 `coalescedCount`)。
+
 ## 安装
 
 把本仓库克隆到用户级 skills 目录:
@@ -133,8 +154,10 @@ Windows (Git Bash) 同样适用,`~` 会自动指向用户目录。重启 CLI 或
 
 ```
 kimi-cache-keeper/
-├── SKILL.md   # Skill 本体:操作手册 + 两种模式的固定保活文本
-└── README.md  # 本文件
+├── SKILL.md              # v1 Skill 本体:操作手册 + 两种模式的固定保活文本
+├── cache-keeper2/
+│   └── SKILL.md          # v2:smart 模式升级为"每轮对话后重置计时器"
+└── README.md             # 本文件
 ```
 
 ## 示例
